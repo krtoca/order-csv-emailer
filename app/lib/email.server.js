@@ -17,7 +17,7 @@ function getTransporter() {
   return nodemailer.createTransport({
     host: process.env.SMTP_HOST || "smtp-pulse.com",
 
-    port: Number(process.env.SMTP_PORT || 465),
+    port: Number(process.env.SMTP_PORT || 2525),
 
     secure: true,
 

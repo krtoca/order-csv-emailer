@@ -1,5 +1,11 @@
 import { useState } from "react";
-import { data, Form, useActionData, useLoaderData, useNavigation } from "react-router";
+import {
+  data,
+  Form,
+  useActionData,
+  useLoaderData,
+  useNavigation,
+} from "react-router";
 
 import {
   Page,
@@ -8,7 +14,6 @@ import {
   Text,
   TextField,
   Checkbox,
-  Button,
   Banner,
   InlineStack,
   Divider,
@@ -49,9 +54,8 @@ export const loader = async ({ request }) => {
 export const action = async ({ request }) => {
   const { session } = await authenticate.admin(request);
 
-  const { getOrderCsvEmailSetting, updateOrderCsvEmailSetting } = await import(
-    "../lib/order-csv-settings.server"
-  );
+  const { getOrderCsvEmailSetting, updateOrderCsvEmailSetting } =
+    await import("../lib/order-csv-settings.server");
 
   const { sendOrderCsvEmail } = await import("../lib/email.server");
 
@@ -95,7 +99,9 @@ export const action = async ({ request }) => {
     bccEmail: String(formData.get("bccEmail") || ""),
     emailSubject: String(formData.get("emailSubject") || ""),
     emailBody: String(formData.get("emailBody") || ""),
-    onlySendForOrderTag: String(formData.get("onlySendForOrderTag") || ""),
+    onlySendForOrderTag: String(
+      formData.get("onlySendForOrderTag") || ""
+    ),
     onlySendForCustomerTag: String(
       formData.get("onlySendForCustomerTag") || ""
     ),
@@ -118,14 +124,18 @@ export default function SettingsPage() {
   const [enabled, setEnabled] = useState(Boolean(setting.enabled));
   const [fromEmail, setFromEmail] = useState(setting.fromEmail || "");
   const [bccEmail, setBccEmail] = useState(setting.bccEmail || "");
-  const [emailSubject, setEmailSubject] = useState(setting.emailSubject || "");
+  const [emailSubject, setEmailSubject] = useState(
+    setting.emailSubject || ""
+  );
   const [emailBody, setEmailBody] = useState(setting.emailBody || "");
+
   const [onlySendForOrderTag, setOnlySendForOrderTag] = useState(
     setting.onlySendForOrderTag || ""
   );
-  const [onlySendForCustomerTag, setOnlySendForCustomerTag] = useState(
-    setting.onlySendForCustomerTag || ""
-  );
+
+  const [onlySendForCustomerTag, setOnlySendForCustomerTag] =
+    useState(setting.onlySendForCustomerTag || "");
+
   const [testEmail, setTestEmail] = useState("");
 
   const [csvColumns, setCsvColumns] = useState(
@@ -138,7 +148,9 @@ export default function SettingsPage() {
   function toggleCsvColumn(columnKey, checked) {
     setCsvColumns((current) => {
       if (checked) {
-        return current.includes(columnKey) ? current : [...current, columnKey];
+        return current.includes(columnKey)
+          ? current
+          : [...current, columnKey];
       }
 
       return current.filter((key) => key !== columnKey);
@@ -172,9 +184,57 @@ export default function SettingsPage() {
             <BlockStack gap="400">
               <input type="hidden" name="intent" value="save" />
 
+              {enabled ? (
+                <input type="hidden" name="enabled" value="on" />
+              ) : null}
+
+              <input
+                type="hidden"
+                name="fromEmail"
+                value={fromEmail}
+              />
+
+              <input
+                type="hidden"
+                name="bccEmail"
+                value={bccEmail}
+              />
+
+              <input
+                type="hidden"
+                name="emailSubject"
+                value={emailSubject}
+              />
+
+              <input
+                type="hidden"
+                name="emailBody"
+                value={emailBody}
+              />
+
+              <input
+                type="hidden"
+                name="onlySendForOrderTag"
+                value={onlySendForOrderTag}
+              />
+
+              <input
+                type="hidden"
+                name="onlySendForCustomerTag"
+                value={onlySendForCustomerTag}
+              />
+
+              {csvColumns.map((columnKey) => (
+                <input
+                  key={columnKey}
+                  type="hidden"
+                  name="csvColumns"
+                  value={columnKey}
+                />
+              ))}
+
               <Checkbox
                 label="Enable automatic CSV email"
-                name="enabled"
                 checked={enabled}
                 onChange={setEnabled}
                 helpText="When enabled, customers will receive a CSV file when a new order is created."
@@ -182,7 +242,6 @@ export default function SettingsPage() {
 
               <TextField
                 label="From email"
-                name="fromEmail"
                 value={fromEmail}
                 onChange={setFromEmail}
                 placeholder="Orders <orders@yourdomain.com>"
@@ -192,7 +251,6 @@ export default function SettingsPage() {
 
               <TextField
                 label="BCC email"
-                name="bccEmail"
                 value={bccEmail}
                 onChange={setBccEmail}
                 placeholder="admin@yourdomain.com"
@@ -202,7 +260,6 @@ export default function SettingsPage() {
 
               <TextField
                 label="Email subject"
-                name="emailSubject"
                 value={emailSubject}
                 onChange={setEmailSubject}
                 helpText="You can use {{orderName}}."
@@ -211,7 +268,6 @@ export default function SettingsPage() {
 
               <TextField
                 label="Email body"
-                name="emailBody"
                 value={emailBody}
                 onChange={setEmailBody}
                 multiline={5}
@@ -221,7 +277,6 @@ export default function SettingsPage() {
 
               <TextField
                 label="Only send for order tag"
-                name="onlySendForOrderTag"
                 value={onlySendForOrderTag}
                 onChange={setOnlySendForOrderTag}
                 placeholder="SEND_CSV"
@@ -231,7 +286,6 @@ export default function SettingsPage() {
 
               <TextField
                 label="Only send for customer tag"
-                name="onlySendForCustomerTag"
                 value={onlySendForCustomerTag}
                 onChange={setOnlySendForCustomerTag}
                 placeholder="WHOLESALE"
@@ -255,8 +309,6 @@ export default function SettingsPage() {
                     <Checkbox
                       key={column.key}
                       label={column.label}
-                      name="csvColumns"
-                      value={column.key}
                       checked={csvColumns.includes(column.key)}
                       onChange={(checked) =>
                         toggleCsvColumn(column.key, checked)
@@ -273,27 +325,30 @@ export default function SettingsPage() {
                   </Text>
 
                   <Text as="p" tone="subdued">
-                    {"{{orderName}}"} = Shopify order number, for example #1001
+                    {"{{orderName}}"} = Shopify order number,
+                    for example #1001
                   </Text>
                 </BlockStack>
               </Card>
 
               <InlineStack align="end">
-              <button
-                type="submit"
-                disabled={isSaving}
-                style={{
-                  background: "#202223",
-                  color: "white",
-                  border: "none",
-                  borderRadius: 6,
-                  padding: "8px 14px",
-                  cursor: isSaving ? "not-allowed" : "pointer",
-                  fontWeight: 600,
-                }}
-              >
-                {isSaving ? "Saving..." : "Save settings"}
-              </button>
+                <button
+                  type="submit"
+                  disabled={isSaving}
+                  style={{
+                    background: "#202223",
+                    color: "white",
+                    border: "none",
+                    borderRadius: 6,
+                    padding: "8px 14px",
+                    cursor: isSaving
+                      ? "not-allowed"
+                      : "pointer",
+                    fontWeight: 600,
+                  }}
+                >
+                  {isSaving ? "Saving..." : "Save settings"}
+                </button>
               </InlineStack>
             </BlockStack>
           </Form>
@@ -312,14 +367,23 @@ export default function SettingsPage() {
 
               <TextField
                 label="Test email"
-                name="testEmail"
                 value={testEmail}
                 onChange={setTestEmail}
                 placeholder="admin@yourdomain.com"
                 autoComplete="email"
               />
 
-              <input type="hidden" name="intent" value="send_test" />
+              <input
+                type="hidden"
+                name="testEmail"
+                value={testEmail}
+              />
+
+              <input
+                type="hidden"
+                name="intent"
+                value="send_test"
+              />
 
               <InlineStack align="end">
                 <button

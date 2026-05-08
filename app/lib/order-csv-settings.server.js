@@ -1,7 +1,7 @@
 import prisma from "../db.server";
 
 export const DEFAULT_CSV_COLUMNS =
-  "orderName,customerEmail,sku,productTitle,variantTitle,quantity,price,vendor";
+  "orderName,customerEmail,sku,barcode,productTitle,variantTitle,quantity,price,vendor";
 
 export async function getOrderCsvEmailSetting(shop) {
   if (!shop) {

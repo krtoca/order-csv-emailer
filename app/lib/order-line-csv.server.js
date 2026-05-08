@@ -12,6 +12,16 @@ function csvEscape(value) {
   return str;
 }
 
+function getBarcode({ item }) {
+  return (
+    item.barcode ||
+    item.variant_barcode ||
+    item.variant?.barcode ||
+    item.admin_graphql_api_id?.barcode ||
+    ""
+  );
+}
+
 const COLUMN_DEFINITIONS = {
   orderName: {
     label: "Order Name",
@@ -25,6 +35,10 @@ const COLUMN_DEFINITIONS = {
   sku: {
     label: "SKU",
     getValue: ({ item }) => item.sku || "",
+  },
+  barcode: {
+    label: "Barcode",
+    getValue: ({ item }) => getBarcode({ item }),
   },
   productTitle: {
     label: "Product Title",
@@ -52,6 +66,7 @@ const DEFAULT_COLUMN_KEYS = [
   "orderName",
   "customerEmail",
   "sku",
+  "barcode",
   "productTitle",
   "variantTitle",
   "quantity",

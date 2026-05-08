@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { data, Form, useActionData, useLoaderData, useNavigation } from "react-router";
 
 import {
@@ -16,12 +17,13 @@ import {
 import { authenticate } from "../shopify.server";
 
 const DEFAULT_CSV_COLUMNS =
-  "orderName,customerEmail,sku,productTitle,variantTitle,quantity,price,vendor";
+  "orderName,customerEmail,sku,barcode,productTitle,variantTitle,quantity,price,vendor";
 
 const AVAILABLE_CSV_COLUMNS = [
   { key: "orderName", label: "Order Name" },
   { key: "customerEmail", label: "Customer Email" },
   { key: "sku", label: "SKU" },
+  { key: "barcode", label: "Barcode" },
   { key: "productTitle", label: "Product Title" },
   { key: "variantTitle", label: "Variant Title" },
   { key: "quantity", label: "Quantity" },
@@ -74,7 +76,7 @@ export const action = async ({ request }) => {
       fromEmail: setting.fromEmail,
       orderName: "#TEST1001",
       csvContent:
-        "Order Name,Customer Email,SKU,Product Title,Variant Title,Quantity,Price,Vendor\n#TEST1001,test@example.com,ABC-123,Product A,Red / Large,2,9.99,ONE",
+        "Order Name,Customer Email,SKU,Barcode,Product Title,Variant Title,Quantity,Price,Vendor\n#TEST1001,test@example.com,ABC-123,123456789012,Product A,Red / Large,2,9.99,ONE",
       emailSubject: setting.emailSubject,
       emailBody: setting.emailBody,
     });
@@ -113,9 +115,35 @@ export default function SettingsPage() {
 
   const isSaving = navigation.state === "submitting";
 
-  const selectedColumns = String(
-    setting.csvColumns || DEFAULT_CSV_COLUMNS
-  ).split(",");
+  const [enabled, setEnabled] = useState(Boolean(setting.enabled));
+  const [fromEmail, setFromEmail] = useState(setting.fromEmail || "");
+  const [bccEmail, setBccEmail] = useState(setting.bccEmail || "");
+  const [emailSubject, setEmailSubject] = useState(setting.emailSubject || "");
+  const [emailBody, setEmailBody] = useState(setting.emailBody || "");
+  const [onlySendForOrderTag, setOnlySendForOrderTag] = useState(
+    setting.onlySendForOrderTag || ""
+  );
+  const [onlySendForCustomerTag, setOnlySendForCustomerTag] = useState(
+    setting.onlySendForCustomerTag || ""
+  );
+  const [testEmail, setTestEmail] = useState("");
+
+  const [csvColumns, setCsvColumns] = useState(
+    String(setting.csvColumns || DEFAULT_CSV_COLUMNS)
+      .split(",")
+      .map((value) => value.trim())
+      .filter(Boolean)
+  );
+
+  function toggleCsvColumn(columnKey, checked) {
+    setCsvColumns((current) => {
+      if (checked) {
+        return current.includes(columnKey) ? current : [...current, columnKey];
+      }
+
+      return current.filter((key) => key !== columnKey);
+    });
+  }
 
   return (
     <Page
@@ -147,14 +175,16 @@ export default function SettingsPage() {
               <Checkbox
                 label="Enable automatic CSV email"
                 name="enabled"
-                defaultChecked={setting.enabled}
+                checked={enabled}
+                onChange={setEnabled}
                 helpText="When enabled, customers will receive a CSV file when a new order is created."
               />
 
               <TextField
                 label="From email"
                 name="fromEmail"
-                defaultValue={setting.fromEmail || ""}
+                value={fromEmail}
+                onChange={setFromEmail}
                 placeholder="Orders <orders@yourdomain.com>"
                 helpText="Leave empty to use ORDER_CSV_FROM_EMAIL from your environment variables."
                 autoComplete="off"
@@ -163,7 +193,8 @@ export default function SettingsPage() {
               <TextField
                 label="BCC email"
                 name="bccEmail"
-                defaultValue={setting.bccEmail || ""}
+                value={bccEmail}
+                onChange={setBccEmail}
                 placeholder="admin@yourdomain.com"
                 helpText="Optional. A copy of every CSV email will be sent to this address."
                 autoComplete="off"
@@ -172,7 +203,8 @@ export default function SettingsPage() {
               <TextField
                 label="Email subject"
                 name="emailSubject"
-                defaultValue={setting.emailSubject}
+                value={emailSubject}
+                onChange={setEmailSubject}
                 helpText="You can use {{orderName}}."
                 autoComplete="off"
               />
@@ -180,7 +212,8 @@ export default function SettingsPage() {
               <TextField
                 label="Email body"
                 name="emailBody"
-                defaultValue={setting.emailBody}
+                value={emailBody}
+                onChange={setEmailBody}
                 multiline={5}
                 helpText="You can use {{orderName}}."
                 autoComplete="off"
@@ -189,7 +222,8 @@ export default function SettingsPage() {
               <TextField
                 label="Only send for order tag"
                 name="onlySendForOrderTag"
-                defaultValue={setting.onlySendForOrderTag || ""}
+                value={onlySendForOrderTag}
+                onChange={setOnlySendForOrderTag}
                 placeholder="SEND_CSV"
                 helpText="Optional. If filled, CSV email will only be sent when the Shopify order has this tag."
                 autoComplete="off"
@@ -198,7 +232,8 @@ export default function SettingsPage() {
               <TextField
                 label="Only send for customer tag"
                 name="onlySendForCustomerTag"
-                defaultValue={setting.onlySendForCustomerTag || ""}
+                value={onlySendForCustomerTag}
+                onChange={setOnlySendForCustomerTag}
                 placeholder="WHOLESALE"
                 helpText="Optional. If filled, CSV email will only be sent when the customer has this tag."
                 autoComplete="off"
@@ -222,7 +257,10 @@ export default function SettingsPage() {
                       label={column.label}
                       name="csvColumns"
                       value={column.key}
-                      defaultChecked={selectedColumns.includes(column.key)}
+                      checked={csvColumns.includes(column.key)}
+                      onChange={(checked) =>
+                        toggleCsvColumn(column.key, checked)
+                      }
                     />
                   ))}
                 </BlockStack>
@@ -263,6 +301,8 @@ export default function SettingsPage() {
               <TextField
                 label="Test email"
                 name="testEmail"
+                value={testEmail}
+                onChange={setTestEmail}
                 placeholder="admin@yourdomain.com"
                 autoComplete="email"
               />

@@ -15,10 +15,18 @@ function applyTemplate(template, data) {
 
 function getTransporter() {
   return nodemailer.createTransport({
-    host: process.env.SMTP_HOST || "142.250.102.108",
-    port: Number(process.env.SMTP_PORT || 587),
-    secure: false,
+    host: process.env.SMTP_HOST || "smtp-pulse.com",
+
+    port: Number(process.env.SMTP_PORT || 465),
+
+    secure: true,
+
     family: 4,
+
+    connectionTimeout: 15000,
+    greetingTimeout: 15000,
+    socketTimeout: 20000,
+
     auth: {
       user: process.env.SMTP_USER,
       pass: process.env.SMTP_PASS,
@@ -78,7 +86,7 @@ export async function sendOrderCsvEmail({
     ],
   });
 
-  console.log("[Order CSV Email] Gmail SMTP sent:", {
+  console.log("[Order CSV Email] SMTP sent:", {
     to,
     bcc,
     orderName,

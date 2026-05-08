@@ -52,5 +52,4 @@ uri = "/webhooks/orders/create"
 redirect_urls = [ "https://order-csv-emailer.onrender.com" ]
 
 [build]
-include_config_on_deploy = true
 automatically_update_urls_on_dev = true

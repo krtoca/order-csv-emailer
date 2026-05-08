@@ -35,15 +35,17 @@ model Session {
 
 model OrderCsvEmailSetting {
   id        String   @id @default(cuid())
-  shop     String   @unique
+  shop      String   @unique
 
-  enabled  Boolean  @default(true)
+  enabled   Boolean  @default(true)
 
   fromEmail String?
   bccEmail  String?
 
   emailSubject String @default("Order {{orderName}} line items CSV")
   emailBody    String @default("Thank you for your order. Your order line items CSV file is attached.")
+
+  csvColumns String @default("orderName,customerEmail,sku,productTitle,variantTitle,quantity,price,vendor")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

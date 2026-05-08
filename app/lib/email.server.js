@@ -14,13 +14,12 @@ function applyTemplate(template, data) {
 }
 
 function getTransporter() {
+  const port = Number(process.env.SMTP_PORT || 2525);
+
   return nodemailer.createTransport({
     host: process.env.SMTP_HOST || "smtp-pulse.com",
-
-    port: Number(process.env.SMTP_PORT || 2525),
-
-    secure: true,
-
+    port,
+    secure: port === 465,
     family: 4,
 
     connectionTimeout: 15000,

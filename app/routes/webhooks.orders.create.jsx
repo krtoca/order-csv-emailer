@@ -135,8 +135,16 @@ export const action = async ({ request }) => {
         .filter(Boolean);
 
       const csvContent = buildOrderLineItemsCsv(order, selectedColumnKeys);
+      console.log("[Order CSV Email] Sending email:", {
+  shop,
+  orderId,
+  orderName,
+  to: customerEmail,
+  bcc: setting.bccEmail,
+  fromEmail: setting.fromEmail,
+});
 
-      await sendOrderCsvEmail({
+await sendOrderCsvEmail({
         to: customerEmail,
         bcc: setting.bccEmail,
         fromEmail: setting.fromEmail,
@@ -145,6 +153,13 @@ export const action = async ({ request }) => {
         emailSubject: setting.emailSubject,
         emailBody: setting.emailBody,
       });
+
+      console.log("[Order CSV Email] Email send function finished:", {
+  shop,
+  orderId,
+  orderName,
+  to: customerEmail,
+});
 
       processedOrders.add(duplicateKey);
 

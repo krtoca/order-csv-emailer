@@ -279,9 +279,21 @@ export default function SettingsPage() {
               </Card>
 
               <InlineStack align="end">
-                <Button submit variant="primary" loading={isSaving}>
-                  Save settings
-                </Button>
+              <button
+                type="submit"
+                disabled={isSaving}
+                style={{
+                  background: "#202223",
+                  color: "white",
+                  border: "none",
+                  borderRadius: 6,
+                  padding: "8px 14px",
+                  cursor: isSaving ? "not-allowed" : "pointer",
+                  fontWeight: 600,
+                }}
+              >
+                {isSaving ? "Saving..." : "Save settings"}
+              </button>
               </InlineStack>
             </BlockStack>
           </Form>
@@ -310,7 +322,20 @@ export default function SettingsPage() {
               <input type="hidden" name="intent" value="send_test" />
 
               <InlineStack align="end">
-                <Button submit>Send test email</Button>
+                <button
+                  type="submit"
+                  style={{
+                    background: "#202223",
+                    color: "white",
+                    border: "none",
+                    borderRadius: 6,
+                    padding: "8px 14px",
+                    cursor: "pointer",
+                    fontWeight: 600,
+                  }}
+                >
+                  Send test email
+                </button>
               </InlineStack>
             </BlockStack>
           </Form>

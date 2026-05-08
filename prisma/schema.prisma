@@ -45,7 +45,10 @@ model OrderCsvEmailSetting {
   emailSubject String @default("Order {{orderName}} line items CSV")
   emailBody    String @default("Thank you for your order. Your order line items CSV file is attached.")
 
-  csvColumns String @default("orderName,customerEmail,sku,productTitle,variantTitle,quantity,price,vendor")
+  csvColumns String @default("orderName,customerEmail,sku,barcode,productTitle,variantTitle,quantity,price,vendor")
+
+  onlySendForOrderTag    String?
+  onlySendForCustomerTag String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

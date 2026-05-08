@@ -1,6 +1,4 @@
-import { Resend } from "resend";
-
-const resend = new Resend(process.env.RESEND_API_KEY);
+import nodemailer from "nodemailer";
 
 function safeFilename(value) {
   return String(value || "order")
@@ -15,6 +13,18 @@ function applyTemplate(template, data) {
   );
 }
 
+function getTransporter() {
+  return nodemailer.createTransport({
+    host: process.env.SMTP_HOST || "smtp.gmail.com",
+    port: Number(process.env.SMTP_PORT || 587),
+    secure: false,
+    auth: {
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASS,
+    },
+  });
+}
+
 export async function sendOrderCsvEmail({
   to,
   bcc,
@@ -24,9 +34,9 @@ export async function sendOrderCsvEmail({
   emailSubject,
   emailBody,
 }) {
-  if (!process.env.RESEND_API_KEY) {
-    console.warn("[Order CSV Email] RESEND_API_KEY is missing.");
-    return { skipped: true, reason: "missing_api_key" };
+  if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
+    console.warn("[Order CSV Email] SMTP credentials missing.");
+    return { skipped: true, reason: "missing_smtp_credentials" };
   }
 
   if (!to) {
@@ -37,7 +47,7 @@ export async function sendOrderCsvEmail({
   const from =
     fromEmail ||
     process.env.ORDER_CSV_FROM_EMAIL ||
-    "Orders <onboarding@resend.dev>";
+    process.env.SMTP_USER;
 
   const subject = applyTemplate(
     emailSubject || "Order {{orderName}} line items CSV",
@@ -52,33 +62,31 @@ export async function sendOrderCsvEmail({
 
   const filename = `${safeFilename(orderName)}-line-items.csv`;
 
-  const result = await resend.emails.send({
+  const result = await getTransporter().sendMail({
     from,
-    to: [to],
-    bcc: bcc ? [bcc] : undefined,
+    to,
+    bcc: bcc || undefined,
     subject,
-    html: `
-      <p>${bodyText.replace(/\n/g, "<br />")}</p>
-    `,
+    html: `<p>${bodyText.replace(/\n/g, "<br />")}</p>`,
     attachments: [
       {
         filename,
-        content: Buffer.from(csvContent, "utf8").toString("base64"),
+        content: csvContent,
+        contentType: "text/csv; charset=utf-8",
       },
     ],
   });
 
-  if (result.error) {
-    console.error("[Order CSV Email] Resend error:", result.error);
-    throw new Error(result.error.message || "Failed to send CSV email");
-  }
-
-  console.log("[Order CSV Email] Sent:", {
+  console.log("[Order CSV Email] Gmail SMTP sent:", {
     to,
     bcc,
     orderName,
     filename,
+    messageId: result.messageId,
   });
 
-  return result.data;
+  return {
+    success: true,
+    messageId: result.messageId,
+  };
 }

@@ -15,7 +15,7 @@ function applyTemplate(template, data) {
 
 function getTransporter() {
   return nodemailer.createTransport({
-    host: process.env.SMTP_HOST || "smtp.gmail.com",
+    host: process.env.SMTP_HOST || "142.250.102.108",
     port: Number(process.env.SMTP_PORT || 587),
     secure: false,
     family: 4,

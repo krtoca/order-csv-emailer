@@ -10,10 +10,12 @@ const processedOrders = new Set();
 const processingOrders = new Set();
 
 function hasTag(tags, targetTag) {
-  if (!targetTag) return true;
+  if (!targetTag) return false;
   if (!tags) return false;
 
   const normalizedTarget = String(targetTag).trim().toLowerCase();
+
+  if (!normalizedTarget) return false;
 
   if (Array.isArray(tags)) {
     return tags.some(
@@ -24,7 +26,17 @@ function hasTag(tags, targetTag) {
   return String(tags)
     .split(",")
     .map((tag) => tag.trim().toLowerCase())
+    .filter(Boolean)
     .includes(normalizedTarget);
+}
+
+function getCustomerTags(order) {
+  return (
+    order?.customer?.tags ||
+    order?.customer_tags ||
+    order?.customerTags ||
+    ""
+  );
 }
 
 export const action = async ({ request }) => {
@@ -74,6 +86,13 @@ export const action = async ({ request }) => {
     try {
       const setting = await getOrderCsvEmailSetting(shop);
 
+      console.log("[Order CSV Email] Loaded setting:", {
+        shop,
+        enabled: setting.enabled,
+        excludeCustomerTag: setting.onlySendForCustomerTag,
+        csvColumns: setting.csvColumns,
+      });
+
       if (!setting.enabled) {
         console.log("[Order CSV Email] Skipped. Setting disabled:", {
           shop,
@@ -84,32 +103,36 @@ export const action = async ({ request }) => {
         return new Response("OK", { status: 200 });
       }
 
-      if (
-        setting.onlySendForOrderTag &&
-        !hasTag(order.tags, setting.onlySendForOrderTag)
-      ) {
-        console.log("[Order CSV Email] Skipped. Order tag not matched:", {
-          shop,
-          orderId,
-          orderName,
-          requiredTag: setting.onlySendForOrderTag,
-          orderTags: order.tags,
-        });
+      const excludedCustomerTag = String(
+        setting.onlySendForCustomerTag || ""
+      ).trim();
 
-        return new Response("OK", { status: 200 });
-      }
+      const customerTags = getCustomerTags(order);
+
+      console.log("[Order CSV Email] Customer tag check:", {
+        shop,
+        orderId,
+        orderName,
+        excludedCustomerTag,
+        customerId: order?.customer?.id,
+        customerEmail: order?.customer?.email,
+        customerTags,
+      });
 
       if (
-        setting.onlySendForCustomerTag &&
-        !hasTag(order.customer?.tags, setting.onlySendForCustomerTag)
+        excludedCustomerTag &&
+        hasTag(customerTags, excludedCustomerTag)
       ) {
-        console.log("[Order CSV Email] Skipped. Customer tag not matched:", {
-          shop,
-          orderId,
-          orderName,
-          requiredTag: setting.onlySendForCustomerTag,
-          customerTags: order.customer?.tags,
-        });
+        console.log(
+          "[Order CSV Email] Skipped. Customer has excluded tag:",
+          {
+            shop,
+            orderId,
+            orderName,
+            excludedCustomerTag,
+            customerTags,
+          }
+        );
 
         return new Response("OK", { status: 200 });
       }
@@ -135,16 +158,17 @@ export const action = async ({ request }) => {
         .filter(Boolean);
 
       const csvContent = buildOrderLineItemsCsv(order, selectedColumnKeys);
-      console.log("[Order CSV Email] Sending email:", {
-  shop,
-  orderId,
-  orderName,
-  to: customerEmail,
-  bcc: setting.bccEmail,
-  fromEmail: setting.fromEmail,
-});
 
-await sendOrderCsvEmail({
+      console.log("[Order CSV Email] Sending email:", {
+        shop,
+        orderId,
+        orderName,
+        to: customerEmail,
+        bcc: setting.bccEmail,
+        fromEmail: setting.fromEmail,
+      });
+
+      await sendOrderCsvEmail({
         to: customerEmail,
         bcc: setting.bccEmail,
         fromEmail: setting.fromEmail,
@@ -155,11 +179,11 @@ await sendOrderCsvEmail({
       });
 
       console.log("[Order CSV Email] Email send function finished:", {
-  shop,
-  orderId,
-  orderName,
-  to: customerEmail,
-});
+        shop,
+        orderId,
+        orderName,
+        to: customerEmail,
+      });
 
       processedOrders.add(duplicateKey);
 

@@ -99,12 +99,15 @@ export const action = async ({ request }) => {
     bccEmail: String(formData.get("bccEmail") || ""),
     emailSubject: String(formData.get("emailSubject") || ""),
     emailBody: String(formData.get("emailBody") || ""),
-    onlySendForOrderTag: String(
-      formData.get("onlySendForOrderTag") || ""
-    ),
+
+    // Order tag condition removed.
+    onlySendForOrderTag: "",
+
+    // This is now used as EXCLUDE customer tag.
     onlySendForCustomerTag: String(
       formData.get("onlySendForCustomerTag") || ""
-    ),
+    ).trim(),
+
     csvColumns:
       selectedColumns.length > 0
         ? selectedColumns.join(",")
@@ -128,10 +131,6 @@ export default function SettingsPage() {
     setting.emailSubject || ""
   );
   const [emailBody, setEmailBody] = useState(setting.emailBody || "");
-
-  const [onlySendForOrderTag, setOnlySendForOrderTag] = useState(
-    setting.onlySendForOrderTag || ""
-  );
 
   const [onlySendForCustomerTag, setOnlySendForCustomerTag] =
     useState(setting.onlySendForCustomerTag || "");
@@ -188,36 +187,14 @@ export default function SettingsPage() {
                 <input type="hidden" name="enabled" value="on" />
               ) : null}
 
-              <input
-                type="hidden"
-                name="fromEmail"
-                value={fromEmail}
-              />
-
-              <input
-                type="hidden"
-                name="bccEmail"
-                value={bccEmail}
-              />
-
+              <input type="hidden" name="fromEmail" value={fromEmail} />
+              <input type="hidden" name="bccEmail" value={bccEmail} />
               <input
                 type="hidden"
                 name="emailSubject"
                 value={emailSubject}
               />
-
-              <input
-                type="hidden"
-                name="emailBody"
-                value={emailBody}
-              />
-
-              <input
-                type="hidden"
-                name="onlySendForOrderTag"
-                value={onlySendForOrderTag}
-              />
-
+              <input type="hidden" name="emailBody" value={emailBody} />
               <input
                 type="hidden"
                 name="onlySendForCustomerTag"
@@ -276,20 +253,11 @@ export default function SettingsPage() {
               />
 
               <TextField
-                label="Only send for order tag"
-                value={onlySendForOrderTag}
-                onChange={setOnlySendForOrderTag}
-                placeholder="SEND_CSV"
-                helpText="Optional. If filled, CSV email will only be sent when the Shopify order has this tag."
-                autoComplete="off"
-              />
-
-              <TextField
-                label="Only send for customer tag"
+                label="Do not send for customer tag"
                 value={onlySendForCustomerTag}
                 onChange={setOnlySendForCustomerTag}
                 placeholder="WHOLESALE"
-                helpText="Optional. If filled, CSV email will only be sent when the customer has this tag."
+                helpText="Optional. If filled, CSV email will NOT be sent when the customer has this tag."
                 autoComplete="off"
               />
 
@@ -325,8 +293,7 @@ export default function SettingsPage() {
                   </Text>
 
                   <Text as="p" tone="subdued">
-                    {"{{orderName}}"} = Shopify order number,
-                    for example #1001
+                    {"{{orderName}}"} = Shopify order number, for example #1001
                   </Text>
                 </BlockStack>
               </Card>
@@ -341,9 +308,7 @@ export default function SettingsPage() {
                     border: "none",
                     borderRadius: 6,
                     padding: "8px 14px",
-                    cursor: isSaving
-                      ? "not-allowed"
-                      : "pointer",
+                    cursor: isSaving ? "not-allowed" : "pointer",
                     fontWeight: 600,
                   }}
                 >
@@ -373,17 +338,8 @@ export default function SettingsPage() {
                 autoComplete="email"
               />
 
-              <input
-                type="hidden"
-                name="testEmail"
-                value={testEmail}
-              />
-
-              <input
-                type="hidden"
-                name="intent"
-                value="send_test"
-              />
+              <input type="hidden" name="testEmail" value={testEmail} />
+              <input type="hidden" name="intent" value="send_test" />
 
               <InlineStack align="end">
                 <button

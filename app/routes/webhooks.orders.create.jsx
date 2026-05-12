@@ -14,7 +14,6 @@ function hasTag(tags, targetTag) {
   if (!tags) return false;
 
   const normalizedTarget = String(targetTag).trim().toLowerCase();
-
   if (!normalizedTarget) return false;
 
   if (Array.isArray(tags)) {
@@ -30,7 +29,7 @@ function hasTag(tags, targetTag) {
     .includes(normalizedTarget);
 }
 
-function getCustomerTags(order) {
+function getPayloadCustomerTags(order) {
   return (
     order?.customer?.tags ||
     order?.customer_tags ||
@@ -39,9 +38,82 @@ function getCustomerTags(order) {
   );
 }
 
+function getCustomerGid(order) {
+  if (order?.customer?.admin_graphql_api_id) {
+    return order.customer.admin_graphql_api_id;
+  }
+
+  if (order?.customer?.id) {
+    return `gid://shopify/Customer/${order.customer.id}`;
+  }
+
+  return "";
+}
+
+async function fetchCustomerTagsFromShopify({ admin, order }) {
+  const payloadTags = getPayloadCustomerTags(order);
+
+  if (payloadTags) {
+    return payloadTags;
+  }
+
+  if (!admin) {
+    console.warn("[Order CSV Email] Admin API not available in webhook.");
+    return "";
+  }
+
+  const customerGid = getCustomerGid(order);
+
+  if (!customerGid) {
+    console.warn("[Order CSV Email] No customer ID found for tag lookup.");
+    return "";
+  }
+
+  try {
+    const response = await admin.graphql(
+      `#graphql
+        query CustomerTags($id: ID!) {
+          customer(id: $id) {
+            id
+            email
+            tags
+          }
+        }
+      `,
+      {
+        variables: {
+          id: customerGid,
+        },
+      }
+    );
+
+    const result = await response.json();
+
+    if (result?.errors) {
+      console.warn("[Order CSV Email] Customer tag lookup GraphQL errors:", {
+        customerGid,
+        errors: result.errors,
+      });
+      return "";
+    }
+
+    const tags = result?.data?.customer?.tags || "";
+
+    return Array.isArray(tags) ? tags.join(",") : tags;
+  } catch (error) {
+    console.warn("[Order CSV Email] Customer tag lookup failed:", {
+      customerGid,
+      error: error?.message || error,
+    });
+
+    return "";
+  }
+}
+
 export const action = async ({ request }) => {
   try {
-    const { topic, shop, payload } = await authenticate.webhook(request);
+    const { topic, shop, payload, admin } =
+      await authenticate.webhook(request);
 
     const order = payload;
     const orderId = String(order?.id || "");
@@ -107,7 +179,10 @@ export const action = async ({ request }) => {
         setting.onlySendForCustomerTag || ""
       ).trim();
 
-      const customerTags = getCustomerTags(order);
+      const customerTags = await fetchCustomerTagsFromShopify({
+        admin,
+        order,
+      });
 
       console.log("[Order CSV Email] Customer tag check:", {
         shop,

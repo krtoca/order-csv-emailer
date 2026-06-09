@@ -159,7 +159,7 @@ export default function SettingsPage() {
   return (
     <Page
       title="Order CSV Email Settings"
-      subtitle="Automatically send order line item CSV files to customers."
+      subtitle="Automatically send order line item CSV files to customers after an order is fulfilled."
     >
       <BlockStack gap="400">
         {actionData?.success ? (
@@ -214,7 +214,7 @@ export default function SettingsPage() {
                 label="Enable automatic CSV email"
                 checked={enabled}
                 onChange={setEnabled}
-                helpText="When enabled, customers will receive a CSV file when a new order is created."
+                helpText="When enabled, customers will receive a CSV file when an order is fulfilled."
               />
 
               <TextField

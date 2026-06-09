@@ -12,13 +12,23 @@ function csvEscape(value) {
   return str;
 }
 
-function getBarcode({ item }) {
-  return (
-    item.barcode ||
-    item.variant_barcode ||
-    item.variant?.barcode ||
-    item.admin_graphql_api_id?.barcode ||
-    ""
+function firstPresentValue(...values) {
+  for (const value of values) {
+    if (value !== null && value !== undefined && String(value).trim() !== "") {
+      return value;
+    }
+  }
+
+  return "";
+}
+
+export function getBarcode({ item }) {
+  return firstPresentValue(
+    item?.barcode,
+    item?.variant_barcode,
+    item?.variantBarcode,
+    item?.variant?.barcode,
+    item?.product?.barcode
   );
 }
 

@@ -1,0 +1,11 @@
+api_version = "2026-04"
+
+[[extensions]]
+name = "One Order Printer"
+handle = "one-order-printer"
+type = "ui_extension"
+
+# Shopify Admin > Order detail page > Print menu
+[[extensions.targeting]]
+module = "./src/PrintActionExtension.jsx"
+target = "admin.order-details.print-action.render"

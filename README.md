@@ -1,237 +1,227 @@
-# Shopify App Template - React Router
+# One Order Printer - Admin Print + Customer Account PDF
 
-This is a template for building a [Shopify app](https://shopify.dev/docs/apps/getting-started) using [React Router](https://reactrouter.com/). It was forked from the [Shopify Remix app template](https://github.com/Shopify/shopify-app-template-remix) and converted to React Router.
+This Shopify app provides two document flows in one app:
 
-Rather than cloning this repo, follow the [Quick Start steps](https://github.com/Shopify/shopify-app-template-react-router#quick-start).
+1. **Admin**: Shopify Admin > Order detail > Print > One Order Printer
+   - Select **Invoice**, **Packing List**, or both
+   - Open / download / save PDF
 
-Visit the [`shopify.dev` documentation](https://shopify.dev/docs/api/shopify-app-react-router) for more details on the React Router app package.
+2. **Customer Account**: Customer logs in to Shopify Customer Account > Orders
+   - Each order action menu shows **Download Invoice PDF**
+   - Customer can download **Invoice PDF only**
+   - Packing lists are admin-only
+   - The backend validates the Customer Account session token and checks that the order belongs to the logged-in customer before returning the PDF.
 
-## Upgrading from Remix
+## Important setup
 
-If you have an existing Remix app that you want to upgrade to React Router, please follow the [upgrade guide](https://github.com/Shopify/shopify-app-template-react-router/wiki/Upgrading-from-Remix). Otherwise, please follow the quick start guide below.
+### 1. Update app URLs
 
-## Quick start
+Replace all `CHANGE-ME` values in:
 
-### Prerequisites
+- `shopify.app.toml`
+- `.env`
+- `extensions/customer-order-download/src/OrderActionModalExtension.jsx`
 
-Before you begin, you'll need to [download and install the Shopify CLI](https://shopify.dev/docs/apps/tools/cli/getting-started) if you haven't already.
-
-### Setup
-
-```shell
-shopify app init --template=https://github.com/Shopify/shopify-app-template-react-router
-```
-
-### Local Development
-
-```shell
-shopify app dev
-```
-
-Press P to open the URL to your app. Once you click install, you can start development.
-
-Local development is powered by [the Shopify CLI](https://shopify.dev/docs/apps/tools/cli). It logs into your account, connects to an app, provides environment variables, updates remote config, creates a tunnel and provides commands to generate extensions.
-
-### Authenticating and querying data
-
-To authenticate and query data you can use the `shopify` const that is exported from `/app/shopify.server.js`:
+The customer account extension must use your deployed app URL in `APP_URL`:
 
 ```js
-export async function loader({ request }) {
-  const { admin } = await shopify.authenticate.admin(request);
-
-  const response = await admin.graphql(`
-    {
-      products(first: 25) {
-        nodes {
-          title
-          description
-        }
-      }
-    }`);
-
-  const {
-    data: {
-      products: { nodes },
-    },
-  } = await response.json();
-
-  return nodes;
-}
+const APP_URL = 'https://your-app.onrender.com';
 ```
 
-This template comes pre-configured with examples of:
+### 2. Required scopes
 
-1. Setting up your Shopify app in [/app/shopify.server.ts](https://github.com/Shopify/shopify-app-template-react-router/blob/main/app/shopify.server.ts)
-2. Querying data using Graphql. Please see: [/app/routes/app.\_index.tsx](https://github.com/Shopify/shopify-app-template-react-router/blob/main/app/routes/app._index.tsx).
-3. Responding to webhooks. Please see [/app/routes/webhooks.tsx](https://github.com/Shopify/shopify-app-template-react-router/blob/main/app/routes/webhooks.app.uninstalled.tsx).
-4. Using metafields, metaobjects, and declarative custom data definitions. Please see [/app/routes/app.\_index.tsx](https://github.com/Shopify/shopify-app-template-react-router/blob/main/app/routes/app._index.tsx) and [shopify.app.toml](https://github.com/Shopify/shopify-app-template-react-router/blob/main/shopify.app.toml).
+Default production scopes in this version:
 
-Please read the [documentation for @shopify/shopify-app-react-router](https://shopify.dev/docs/api/shopify-app-react-router) to see what other API's are available.
-
-## Shopify Dev MCP
-
-This template is configured with the Shopify Dev MCP. This instructs [Cursor](https://cursor.com/), [GitHub Copilot](https://github.com/features/copilot) and [Claude Code](https://claude.com/product/claude-code) and [Google Gemini CLI](https://github.com/google-gemini/gemini-cli) to use the Shopify Dev MCP.
-
-For more information on the Shopify Dev MCP please read [the documentation](https://shopify.dev/docs/apps/build/devmcp).
-
-## Deployment
-
-### Application Storage
-
-This template uses [Prisma](https://www.prisma.io/) to store session data, by default using an [SQLite](https://www.sqlite.org/index.html) database.
-The database is defined as a Prisma schema in `prisma/schema.prisma`.
-
-This use of SQLite works in production if your app runs as a single instance.
-The database that works best for you depends on the data your app needs and how it is queried.
-Here’s a short list of databases providers that provide a free tier to get started:
-
-| Database   | Type             | Hosters                                                                                                                                                                                                                                    |
-| ---------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| MySQL      | SQL              | [Digital Ocean](https://www.digitalocean.com/products/managed-databases-mysql), [Planet Scale](https://planetscale.com/), [Amazon Aurora](https://aws.amazon.com/rds/aurora/), [Google Cloud SQL](https://cloud.google.com/sql/docs/mysql) |
-| PostgreSQL | SQL              | [Digital Ocean](https://www.digitalocean.com/products/managed-databases-postgresql), [Amazon Aurora](https://aws.amazon.com/rds/aurora/), [Google Cloud SQL](https://cloud.google.com/sql/docs/postgres)                                   |
-| Redis      | Key-value        | [Digital Ocean](https://www.digitalocean.com/products/managed-databases-redis), [Amazon MemoryDB](https://aws.amazon.com/memorydb/)                                                                                                        |
-| MongoDB    | NoSQL / Document | [Digital Ocean](https://www.digitalocean.com/products/managed-databases-mongodb), [MongoDB Atlas](https://www.mongodb.com/atlas/database)                                                                                                  |
-
-To use one of these, you can use a different [datasource provider](https://www.prisma.io/docs/reference/api-reference/prisma-schema-reference#datasource) in your `schema.prisma` file, or a different [SessionStorage adapter package](https://github.com/Shopify/shopify-api-js/blob/main/packages/shopify-api/docs/guides/session-storage.md).
-
-### Build
-
-Build the app by running the command below with the package manager of your choice:
-
-Using yarn:
-
-```shell
-yarn build
+```txt
+read_orders,read_all_orders,read_products,read_files,write_files,customer_read_customers,customer_read_orders
 ```
 
-Using npm:
+Notes:
 
-```shell
-npm run build
+- `read_all_orders` is required for orders older than 60 days and must be approved in Shopify Partner Dashboard before production use.
+- `read_files` and `write_files` are required because logo files are uploaded to **Shopify Files**.
+- After changing scopes, reinstall or reauthorize the app on the store.
+
+### 3. Logo storage
+
+Template logo upload now uses Shopify Files:
+
+1. Admin uploads PNG/JPG logo in **Customize print templates**.
+2. App calls `stagedUploadsCreate`.
+3. App uploads the file to Shopify's staged upload target.
+4. App calls `fileCreate`.
+5. App saves only the Shopify `logoFileId`, `logoUrl`, file name, and content type in the app database.
+
+The logo is loaded from the Shopify CDN URL when PDFs are generated.
+
+> PNG and JPG are supported. WEBP is intentionally not accepted because PDFKit handles PNG/JPG more reliably for server-side PDF rendering.
+
+### 4. Customer account extension network access
+
+The customer extension uses `fetch()` to call the app backend. The extension config has:
+
+```toml
+[extensions.capabilities]
+api_access = true
+network_access = true
 ```
 
-Using pnpm:
+For production, make sure network access is allowed in the Shopify Partner Dashboard when required.
 
-```shell
-pnpm run build
+### 5. Install and run
+
+```bash
+npm install
+npx prisma generate
+npx prisma db push
+npm run dev
 ```
 
-## Hosting
+Deploy extensions:
 
-When you're ready to set up your app in production, you can follow [our deployment documentation](https://shopify.dev/docs/apps/launch/deployment) to host it externally. From there, you have a few options:
-
-- [Google Cloud Run](https://shopify.dev/docs/apps/launch/deployment/deploy-to-google-cloud-run): This tutorial is written specifically for this example repo, and is compatible with the extended steps included in the subsequent [**Build your app**](tutorial) in the **Getting started** docs. It is the most detailed tutorial for taking a React Router-based Shopify app and deploying it to production. It includes configuring permissions and secrets, setting up a production database, and even hosting your apps behind a load balancer across multiple regions.
-- [Fly.io](https://fly.io/docs/js/shopify/): Leverages the Fly.io CLI to quickly launch Shopify apps to a single machine.
-- [Render](https://render.com/docs/deploy-shopify-app): This tutorial guides you through using Docker to deploy and install apps on a Dev store.
-- [Manual deployment guide](https://shopify.dev/docs/apps/launch/deployment/deploy-to-hosting-service): This resource provides general guidance on the requirements of deployment including environment variables, secrets, and persistent data.
-
-When you reach the step for [setting up environment variables](https://shopify.dev/docs/apps/deployment/web#set-env-vars), you also need to set the variable `NODE_ENV=production`.
-
-## Gotchas / Troubleshooting
-
-### Database tables don't exist
-
-If you get an error like:
-
-```
-The table `main.Session` does not exist in the current database.
+```bash
+shopify app deploy
 ```
 
-Create the database for Prisma. Run the `setup` script in `package.json` using `npm`, `yarn` or `pnpm`.
+## Main routes
 
-### Navigating/redirecting breaks an embedded app
+### Admin print route
 
-Embedded apps must maintain the user session, which can be tricky inside an iFrame. To avoid issues:
-
-1. Use `Link` from `react-router` or `@shopify/polaris`. Do not use `<a>`.
-2. Use `redirect` returned from `authenticate.admin`. Do not use `redirect` from `react-router`
-3. Use `useSubmit` from `react-router`.
-
-This only applies if your app is embedded, which it will be by default.
-
-### Webhooks: shop-specific webhook subscriptions aren't updated
-
-If you are registering webhooks in the `afterAuth` hook, using `shopify.registerWebhooks`, you may find that your subscriptions aren't being updated.
-
-Instead of using the `afterAuth` hook declare app-specific webhooks in the `shopify.app.toml` file. This approach is easier since Shopify will automatically sync changes every time you run `deploy` (e.g: `npm run deploy`). Please read these guides to understand more:
-
-1. [app-specific vs shop-specific webhooks](https://shopify.dev/docs/apps/build/webhooks/subscribe#app-specific-subscriptions)
-2. [Create a subscription tutorial](https://shopify.dev/docs/apps/build/webhooks/subscribe/get-started?deliveryMethod=https)
-
-If you do need shop-specific webhooks, keep in mind that the package calls `afterAuth` in 2 scenarios:
-
-- After installing the app
-- When an access token expires
-
-During normal development, the app won't need to re-authenticate most of the time, so shop-specific subscriptions aren't updated. To force your app to update the subscriptions, uninstall and reinstall the app. Revisiting the app will call the `afterAuth` hook.
-
-### Webhooks: Admin created webhook failing HMAC validation
-
-Webhooks subscriptions created in the [Shopify admin](https://help.shopify.com/en/manual/orders/notifications/webhooks) will fail HMAC validation. This is because the webhook payload is not signed with your app's secret key.
-
-The recommended solution is to use [app-specific webhooks](https://shopify.dev/docs/apps/build/webhooks/subscribe#app-specific-subscriptions) defined in your toml file instead. Test your webhooks by triggering events manually in the Shopify admin(e.g. Updating the product title to trigger a `PRODUCTS_UPDATE`).
-
-### Webhooks: Admin object undefined on webhook events triggered by the CLI
-
-When you trigger a webhook event using the Shopify CLI, the `admin` object will be `undefined`. This is because the CLI triggers an event with a valid, but non-existent, shop. The `admin` object is only available when the webhook is triggered by a shop that has installed the app. This is expected.
-
-Webhooks triggered by the CLI are intended for initial experimentation testing of your webhook configuration. For more information on how to test your webhooks, see the [Shopify CLI documentation](https://shopify.dev/docs/apps/tools/cli/commands#webhook-trigger).
-
-### Incorrect GraphQL Hints
-
-By default the [graphql.vscode-graphql](https://marketplace.visualstudio.com/items?itemName=GraphQL.vscode-graphql) extension for will assume that GraphQL queries or mutations are for the [Shopify Admin API](https://shopify.dev/docs/api/admin). This is a sensible default, but it may not be true if:
-
-1. You use another Shopify API such as the storefront API.
-2. You use a third party GraphQL API.
-
-If so, please update [.graphqlrc.ts](https://github.com/Shopify/shopify-app-template-react-router/blob/main/.graphqlrc.ts).
-
-### Using Defer & await for streaming responses
-
-By default the CLI uses a cloudflare tunnel. Unfortunately cloudflare tunnels wait for the Response stream to finish, then sends one chunk. This will not affect production.
-
-To test [streaming using await](https://reactrouter.com/api/components/Await#await) during local development we recommend [localhost based development](https://shopify.dev/docs/apps/build/cli-for-apps/networking-options#localhost-based-development).
-
-### "nbf" claim timestamp check failed
-
-This is because a JWT token is expired. If you are consistently getting this error, it could be that the clock on your machine is not in sync with the server. To fix this ensure you have enabled "Set time and date automatically" in the "Date and Time" settings on your computer.
-
-### Using MongoDB and Prisma
-
-If you choose to use MongoDB with Prisma, there are some gotchas in Prisma's MongoDB support to be aware of. Please see the [Prisma SessionStorage README](https://www.npmjs.com/package/@shopify/shopify-app-session-storage-prisma#mongodb).
-
-### Unable to require(`C:\...\query_engine-windows.dll.node`).
-
-Unable to require(`C:\...\query_engine-windows.dll.node`).
-The Prisma engines do not seem to be compatible with your system.
-
-query_engine-windows.dll.node is not a valid Win32 application.
-
-**Fix:** Set the environment variable:
-
-```shell
-PRISMA_CLIENT_ENGINE_TYPE=binary
+```txt
+/print?orderId=gid://shopify/Order/123&printType=Invoice&format=html
+/print?orderId=gid://shopify/Order/123&printType=Invoice&format=pdf
+/print?orderId=gid://shopify/Order/123&printType=Packing%20Slip&format=pdf
+/print?orderId=gid://shopify/Order/123&printType=Invoice,Packing%20Slip&format=pdf
+/print?orderId=gid://shopify/Order/123&printType=Invoice&format=pdf&download=1
+/print?orderId=gid://shopify/Order/123&printType=Invoice&format=pdf&save=1
 ```
 
-This forces Prisma to use the binary engine mode, which runs the query engine as a separate process and can work via emulation on Windows ARM64.
+### Customer PDF route
 
-## Resources
+```txt
+/customer/pdf?orderId=gid://shopify/Order/123&type=invoice&download=1
+```
 
-React Router:
+Customer route requires a Customer Account session token in the `Authorization: Bearer <token>` header.
 
-- [React Router docs](https://reactrouter.com/home)
+## Template customization
 
-Shopify:
+Open:
 
-- [Intro to Shopify apps](https://shopify.dev/docs/apps/getting-started)
-- [Shopify App React Router docs](https://shopify.dev/docs/api/shopify-app-react-router)
-- [Shopify CLI](https://shopify.dev/docs/apps/tools/cli)
-- [Shopify App Bridge](https://shopify.dev/docs/api/app-bridge-library).
-- [Polaris Web Components](https://shopify.dev/docs/api/app-home/polaris-web-components).
-- [App extensions](https://shopify.dev/docs/apps/app-extensions/list)
-- [Shopify Functions](https://shopify.dev/docs/api/functions)
+```txt
+/app/templates
+```
 
-Internationalization:
+Customizable fields:
 
-- [Internationalizing your app](https://shopify.dev/docs/apps/best-practices/internationalization/getting-started)
+- Company name
+- Company address
+- Phone
+- Email
+- Logo upload to Shopify Files
+- Invoice title
+- Packing list title
+- Footer text
+- SKU visibility
+- Barcode visibility
+- Vendor visibility
+- Customer email visibility
+- Customer phone visibility
+- Invoice price visibility
+- Letter / A4 paper size
+
+## Saved PDFs
+
+Saved generated PDFs are still stored on the app server by default:
+
+```txt
+public/generated-pdfs/<shop>/
+```
+
+For production on Render, use Persistent Disk for saved PDFs, or replace saved PDF storage with S3 / Cloudflare R2. Logo storage does **not** require Persistent Disk anymore because logos are now in Shopify Files.
+
+## Database update
+
+This version adds these fields to `PrintTemplate`:
+
+```prisma
+logoFileId      String @default("")
+logoFileName    String @default("")
+logoContentType String @default("")
+```
+
+Run:
+
+```bash
+npx prisma db push
+```
+
+## v6 fix note
+
+This package removes `@shopify/ui-extensions-react` from the Admin Print Action extension and uses `@shopify/ui-extensions` + Preact instead. This avoids the npm error for non-existing `@shopify/ui-extensions-react@2026.1.0` and keeps the Admin Print target as:
+
+```toml
+target = "admin.order-details.print-action.render"
+module = "./src/PrintActionExtension.jsx"
+```
+
+After replacing files, run:
+
+```bash
+Remove-Item -Recurse -Force node_modules -ErrorAction SilentlyContinue
+Remove-Item -Force package-lock.json -ErrorAction SilentlyContinue
+npm install
+npm run dev
+```
+
+
+## v8 note
+Pinned @shopify/ui-extensions to ~2026.4.0 in root and extension package.json files. If you used an older folder, delete node_modules and package-lock.json before npm install.
+
+## v9 Admin print UI fix
+
+- Fixed Admin Print Action checkbox labels by using the `label` attribute.
+- Fixed order ID detection by using `shopify.data.selected[0].id`, matching Shopify's Admin Print Action example.
+- Admin Print Action now uses `format=html` for preview/printing. PDF output is still available from `/print?format=pdf` and app pages.
+- Added `@preact/signals` dependency required by `@shopify/ui-extensions@~2026.4.0`.
+
+
+## v10 notes - app home and print preview fixes
+
+If the Shopify Admin app page shows `Example Domain`, your Shopify app URL is still pointing to the placeholder URL from `shopify.app.toml`. Run:
+
+```powershell
+npm run dev -- --reset
+```
+
+Select the existing `one-order-print` app. Then open the app from the Dev Console or refresh Shopify Admin. The CLI should update the app URLs to the local tunnel URL.
+
+If the Admin Print preview says `Preview unable to load`, restart dev after installing dependencies and make sure the `/print` route is returning HTML. This version fixes the missing template argument in `print.tsx` that caused the preview route to fail.
+
+Template editing is available inside the embedded app:
+
+```txt
+Apps > one-order-print > Customize print templates
+```
+
+If the embedded app still shows Example Domain, the template page will not load because Shopify is not loading this local app server yet. Fix the app URL first with `npm run dev -- --reset`.
+
+
+## v11 fix
+
+This version adds `app/routes.ts`, which is required by the current React Router build/typegen setup. It maps the app routes explicitly so `npm run typecheck` and `npm run build` no longer fail with `Route config file not found at "app/routes.ts"`.
+
+
+## v15 note
+Admin print preview headers were relaxed for Shopify Admin iframe preview: no CSP frame-ancestors header, cross-origin resource policy allowed, and CORS remains enabled.
+
+## V29 active Shopify config scope fix
+
+If Admin Print preview shows `Access denied for order field` and diagnostics shows the offline session scope as old permissions such as `write_metaobject_definitions,write_metaobjects,write_products`, run:
+
+```powershell
+.\scripts\fix-shopify-config.ps1 -AppUrl "https://one-order-printer.onrender.com"
+shopify app deploy --config shopify.app.one-order-print.toml
+```
+
+Then uninstall/reinstall or re-authorize the app. The offline session scope must include `read_orders`.

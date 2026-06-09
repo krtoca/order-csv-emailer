@@ -1,0 +1,20 @@
+# Customer Account order action extension.
+# This adds a download action to each order in the customer's account.
+api_version = "2026-04"
+
+[[extensions]]
+type = "ui_extension"
+name = "Customer Order PDF Download"
+handle = "customer-order-pdf-download"
+
+[[extensions.targeting]]
+module = "./src/OrderActionMenuExtension.jsx"
+target = "customer-account.order.action.menu-item.render"
+
+[[extensions.targeting]]
+module = "./src/OrderActionModalExtension.jsx"
+target = "customer-account.order.action.render"
+
+[extensions.capabilities]
+api_access = true
+network_access = true

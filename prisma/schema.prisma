@@ -50,6 +50,9 @@ model OrderCsvEmailSetting {
   onlySendForOrderTag    String?
   onlySendForCustomerTag String?
 
+  // One rule per line: customer@email.com -> extra1@email.com, extra2@email.com
+  additionalRecipientRules String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }

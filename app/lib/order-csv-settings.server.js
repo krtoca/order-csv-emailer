@@ -26,6 +26,7 @@ export async function getOrderCsvEmailSetting(shop) {
       csvColumns: DEFAULT_CSV_COLUMNS,
       onlySendForOrderTag: null,
       onlySendForCustomerTag: null,
+      additionalRecipientRules: null,
     },
   });
 }
@@ -46,6 +47,7 @@ export async function updateOrderCsvEmailSetting(shop, data) {
       csvColumns: data.csvColumns || DEFAULT_CSV_COLUMNS,
       onlySendForOrderTag: data.onlySendForOrderTag || null,
       onlySendForCustomerTag: data.onlySendForCustomerTag || null,
+      additionalRecipientRules: data.additionalRecipientRules || null,
     },
     create: {
       shop,
@@ -57,6 +59,7 @@ export async function updateOrderCsvEmailSetting(shop, data) {
       csvColumns: data.csvColumns || DEFAULT_CSV_COLUMNS,
       onlySendForOrderTag: data.onlySendForOrderTag || null,
       onlySendForCustomerTag: data.onlySendForCustomerTag || null,
+      additionalRecipientRules: data.additionalRecipientRules || null,
     },
   });
 }

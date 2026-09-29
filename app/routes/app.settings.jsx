@@ -108,6 +108,10 @@ export const action = async ({ request }) => {
       formData.get("onlySendForCustomerTag") || ""
     ).trim(),
 
+    additionalRecipientRules: String(
+      formData.get("additionalRecipientRules") || ""
+    ).trim(),
+
     csvColumns:
       selectedColumns.length > 0
         ? selectedColumns.join(",")
@@ -134,6 +138,10 @@ export default function SettingsPage() {
 
   const [onlySendForCustomerTag, setOnlySendForCustomerTag] =
     useState(setting.onlySendForCustomerTag || "");
+
+  const [additionalRecipientRules, setAdditionalRecipientRules] = useState(
+    setting.additionalRecipientRules || ""
+  );
 
   const [testEmail, setTestEmail] = useState("");
 
@@ -200,6 +208,11 @@ export default function SettingsPage() {
                 name="onlySendForCustomerTag"
                 value={onlySendForCustomerTag}
               />
+              <input
+                type="hidden"
+                name="additionalRecipientRules"
+                value={additionalRecipientRules}
+              />
 
               {csvColumns.map((columnKey) => (
                 <input
@@ -256,8 +269,18 @@ export default function SettingsPage() {
                 label="Do not send for customer tag"
                 value={onlySendForCustomerTag}
                 onChange={setOnlySendForCustomerTag}
-                placeholder="WHOLESALE"
+                placeholder="NO_CSV"
                 helpText="Optional. If filled, CSV email will NOT be sent when the customer has this tag."
+                autoComplete="off"
+              />
+
+              <TextField
+                label="Additional customer recipients"
+                value={additionalRecipientRules}
+                onChange={setAdditionalRecipientRules}
+                multiline={5}
+                placeholder={"customer@example.com -> purchasing@example.com\nother@example.com -> office@example.com, accounting@example.com"}
+                helpText="Optional. Add one customer per line. Use the customer's Shopify email, then ->, then one or more additional recipient emails separated by commas. The CSV will be sent to the customer and these additional addresses."
                 autoComplete="off"
               />
 

@@ -8,6 +8,47 @@ import {
 const processedOrders = new Set();
 const processingOrders = new Set();
 
+function normalizeEmail(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
+function getAdditionalRecipientsForCustomer(rulesText, customerEmail) {
+  const normalizedCustomerEmail = normalizeEmail(customerEmail);
+
+  if (!rulesText || !normalizedCustomerEmail) {
+    return [];
+  }
+
+  const recipients = [];
+
+  for (const rawLine of String(rulesText).split(/\r?\n/)) {
+    const line = rawLine.trim();
+    if (!line || line.startsWith("#")) continue;
+
+    const separatorIndex = line.indexOf("->");
+    if (separatorIndex === -1) continue;
+
+    const sourceEmail = normalizeEmail(line.slice(0, separatorIndex));
+    if (sourceEmail !== normalizedCustomerEmail) continue;
+
+    const extraEmails = line
+      .slice(separatorIndex + 2)
+      .split(/[;,]/)
+      .map((value) => value.trim())
+      .filter(Boolean);
+
+    for (const email of extraEmails) {
+      const normalized = normalizeEmail(email);
+      if (!normalized) continue;
+      if (normalized === normalizedCustomerEmail) continue;
+      if (recipients.some((item) => normalizeEmail(item) === normalized)) continue;
+      recipients.push(email);
+    }
+  }
+
+  return recipients;
+}
+
 function hasTag(tags, targetTag) {
   if (!targetTag) return false;
   if (!tags) return false;
@@ -293,6 +334,9 @@ export async function processOrderCsvEmailWebhook({ topic, shop, order, admin })
       shop,
       enabled: setting.enabled,
       excludeCustomerTag: setting.onlySendForCustomerTag,
+      additionalRecipientRulesConfigured: Boolean(
+        setting.additionalRecipientRules?.trim()
+      ),
       csvColumns: setting.csvColumns,
     });
 
@@ -350,6 +394,13 @@ export async function processOrderCsvEmailWebhook({ topic, shop, order, admin })
       return new Response("OK", { status: 200 });
     }
 
+    const additionalRecipients = getAdditionalRecipientsForCustomer(
+      setting.additionalRecipientRules,
+      customerEmail
+    );
+
+    const toRecipients = [customerEmail, ...additionalRecipients];
+
     const selectedColumnKeys = String(
       setting.csvColumns || DEFAULT_CSV_COLUMNS
     )
@@ -371,13 +422,15 @@ export async function processOrderCsvEmailWebhook({ topic, shop, order, admin })
       shop,
       orderId,
       orderName,
-      to: customerEmail,
+      to: toRecipients,
+      primaryCustomerEmail: customerEmail,
+      additionalRecipients,
       bcc: setting.bccEmail,
       fromEmail: setting.fromEmail,
     });
 
     await sendOrderCsvEmail({
-      to: customerEmail,
+      to: toRecipients,
       bcc: setting.bccEmail,
       fromEmail: setting.fromEmail,
       orderName: order.name || order.order_number || order.id,
@@ -390,7 +443,9 @@ export async function processOrderCsvEmailWebhook({ topic, shop, order, admin })
       shop,
       orderId,
       orderName,
-      to: customerEmail,
+      to: toRecipients,
+      primaryCustomerEmail: customerEmail,
+      additionalRecipients,
     });
 
     processedOrders.add(duplicateKey);
@@ -403,7 +458,9 @@ export async function processOrderCsvEmailWebhook({ topic, shop, order, admin })
       shop,
       orderId,
       orderName,
-      to: customerEmail,
+      to: toRecipients,
+      primaryCustomerEmail: customerEmail,
+      additionalRecipients,
     });
 
     return new Response("OK", { status: 200 });
